@@ -65,31 +65,13 @@ class MotionCommand(CommandTerm):
         super().__init__(cfg, env)
 
         self.robot: Articulation = env.scene[cfg.asset_name]
-        # self.robot_anchor_body_index = self.robot.body_names.index(self.cfg.anchor_body_name)
-        # self.motion_anchor_body_index = self.cfg.body_names.index(self.cfg.anchor_body_name)
-        # self.body_indexes = torch.tensor(
-        #     self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0], dtype=torch.long, device=self.device
-        # )
-
         self.robot_anchor_body_index = self.robot.body_names.index(self.cfg.anchor_body_name)
         self.motion_anchor_body_index = self.cfg.body_names.index(self.cfg.anchor_body_name)
-
-        self.robot_body_indexes = torch.tensor(
-            self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0],
-            dtype=torch.long,
-            device=self.device,
+        self.body_indexes = torch.tensor(
+            self.robot.find_bodies(self.cfg.body_names, preserve_order=True)[0], dtype=torch.long, device=self.device
         )
 
-        self.motion_body_indexes = torch.arange(
-            len(self.cfg.body_names),
-            dtype=torch.long,
-            device=self.device,
-        )
-
-        self.motion = MotionLoader(self.cfg.motion_file, self.motion_body_indexes, device=self.device)
-
-        # self.motion = MotionLoader(self.cfg.motion_file, self.body_indexes, device=self.device)
-
+        self.motion = MotionLoader(self.cfg.motion_file, self.body_indexes, device=self.device)
         self.time_steps = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
         self.body_pos_relative_w = torch.zeros(self.num_envs, len(cfg.body_names), 3, device=self.device)
         self.body_quat_relative_w = torch.zeros(self.num_envs, len(cfg.body_names), 4, device=self.device)
@@ -167,37 +149,21 @@ class MotionCommand(CommandTerm):
     def robot_joint_vel(self) -> torch.Tensor:
         return self.robot.data.joint_vel
 
-    # @property
-    # def robot_body_pos_w(self) -> torch.Tensor:
-    #     return self.robot.data.body_pos_w[:, self.body_indexes]
-
-    # @property
-    # def robot_body_quat_w(self) -> torch.Tensor:
-    #     return self.robot.data.body_quat_w[:, self.body_indexes]
-
-    # @property
-    # def robot_body_lin_vel_w(self) -> torch.Tensor:
-    #     return self.robot.data.body_lin_vel_w[:, self.body_indexes]
-
-    # @property
-    # def robot_body_ang_vel_w(self) -> torch.Tensor:
-    #     return self.robot.data.body_ang_vel_w[:, self.body_indexes]
-
     @property
     def robot_body_pos_w(self) -> torch.Tensor:
-        return self.robot.data.body_pos_w[:, self.robot_body_indexes]
+        return self.robot.data.body_pos_w[:, self.body_indexes]
 
     @property
     def robot_body_quat_w(self) -> torch.Tensor:
-        return self.robot.data.body_quat_w[:, self.robot_body_indexes]
+        return self.robot.data.body_quat_w[:, self.body_indexes]
 
     @property
     def robot_body_lin_vel_w(self) -> torch.Tensor:
-        return self.robot.data.body_lin_vel_w[:, self.robot_body_indexes]
+        return self.robot.data.body_lin_vel_w[:, self.body_indexes]
 
     @property
     def robot_body_ang_vel_w(self) -> torch.Tensor:
-        return self.robot.data.body_ang_vel_w[:, self.robot_body_indexes]
+        return self.robot.data.body_ang_vel_w[:, self.body_indexes]
 
     @property
     def robot_anchor_pos_w(self) -> torch.Tensor:
