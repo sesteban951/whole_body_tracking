@@ -160,3 +160,50 @@ Below is an overview of the code structure for this repository:
   Includes utility scripts for preprocessing motion data, training policies, and evaluating trained policies.
 
 This structure is designed to ensure modularity and ease of navigation for developers expanding the project.
+
+## Command Hints
+Note this is for `wandb>=0.19`.
+
+Setting the your wandb entity (organization name) and project name:
+
+```bash
+export WANDB_ENTITY=sesteban-california-institute-of-technology-caltech
+```
+
+Example trajectory parsing:
+```bash
+python scripts/csv_to_npz.py \
+    --input_file ./dataset/LAFAN1/dance1_subject2.csv \
+    --input_fps 30 \
+    --output_name dance1_subject2 \
+    --headless
+```
+This will automatically upload the processed motion file to the WandB registry with output name dance1_subject2. It will also autocreate a new project called "csv_to_npz".
+
+Example motion replaying. This downloads it from `wandb` registry and visualizes it in Isaac Sim.:
+```bash
+python scripts/replay_npz.py --registry_name="wandb-registry-Motions/dance1_subject2:v0"
+```
+
+Example downladong a motion from the registry and saving it locally:
+```bash
+wandb artifact get wandb-registry-Motions/dance1_subject2:v0 --root ./motions/
+```
+
+To train a motion tracking policy with the motion in the registry:
+```bash
+python scripts/rsl_rl/train.py \
+    --task=Tracking-Flat-G1-v0 \
+    --registry_name=wandb-registry-Motions/dance1_subject2:v0 \
+    --headless \
+    --logger wandb \
+    --log_project_name=beyondmimic-tracking \
+    --run_name=dance1_subject2_test
+```
+
+```bash
+python scripts/rsl_rl/play.py \
+    --task=Tracking-Flat-G1-v0 \
+    --num_envs=2 \
+    --wandb_path=sesteban-california-institute-of-technology-caltech/beyondmimic-tracking/8bqivqha
+```
