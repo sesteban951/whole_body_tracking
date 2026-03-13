@@ -9,41 +9,15 @@ import wandb
 from whole_body_tracking.utils.exporter import attach_onnx_metadata, export_motion_policy_as_onnx
 
 
-def _get_runner_normalizer(runner):
-    """Return the observation normalizer if this rsl_rl version exposes one."""
-    for attr in (
-        "obs_normalizer",
-        "observation_normalizer",
-        "empirical_normalizer",
-        "_obs_normalizer",
-    ):
-        if hasattr(runner, attr):
-            return getattr(runner, attr)
-    return None
-
-
 class MyOnPolicyRunner(OnPolicyRunner):
     def save(self, path: str, infos=None):
         """Save the model and training information."""
         super().save(path, infos)
-
         if self.logger_type in ["wandb"]:
             policy_path = path.split("model")[0]
             filename = policy_path.split("/")[-2] + ".onnx"
-            normalizer = _get_runner_normalizer(self)
-
-            export_policy_as_onnx(
-                self.alg.policy,
-                normalizer=normalizer,
-                path=policy_path,
-                filename=filename,
-            )
-            attach_onnx_metadata(
-                self.env.unwrapped,
-                wandb.run.name,
-                path=policy_path,
-                filename=filename,
-            )
+            export_policy_as_onnx(self.alg.policy, normalizer=self.obs_normalizer, path=policy_path, filename=filename)
+            attach_onnx_metadata(self.env.unwrapped, wandb.run.name, path=policy_path, filename=filename)
             wandb.save(policy_path + filename, base_path=os.path.dirname(policy_path))
 
 
@@ -57,25 +31,14 @@ class MotionOnPolicyRunner(OnPolicyRunner):
     def save(self, path: str, infos=None):
         """Save the model and training information."""
         super().save(path, infos)
-
         if self.logger_type in ["wandb"]:
             policy_path = path.split("model")[0]
             filename = policy_path.split("/")[-2] + ".onnx"
-            normalizer = _get_runner_normalizer(self)
-
+            normalizer = getattr(self, "obs_normalizer", None)
             export_motion_policy_as_onnx(
-                self.env.unwrapped,
-                self.alg.policy,
-                normalizer=normalizer,
-                path=policy_path,
-                filename=filename,
+                    self.env.unwrapped, self.alg.policy, normalizer=normalizer, path=policy_path, filename=filename
             )
-            attach_onnx_metadata(
-                self.env.unwrapped,
-                wandb.run.name,
-                path=policy_path,
-                filename=filename,
-            )
+            attach_onnx_metadata(self.env.unwrapped, wandb.run.name, path=policy_path, filename=filename)
             wandb.save(policy_path + filename, base_path=os.path.dirname(policy_path))
 
             # link the artifact registry to this run
